@@ -33,21 +33,10 @@
       color: white;
     }
 
-    .profile-pic {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      margin-right: 10px;
-    }
-
     .username {
       font-weight: bold;
       color: yellow;
       margin-right: 6px;
-    }
-
-    .message {
-      flex: 1;
     }
 
     .fb-logo {
@@ -69,36 +58,34 @@
   <script>
     const commentsContainer = document.getElementById("comments");
 
-    // Mock demo messages (replace with API later)
-    const sampleComments = [
-      { user: "Alice", pic: "https://i.pravatar.cc/40?img=1", message: "This is amazing!" },
-      { user: "Brian", pic: "https://i.pravatar.cc/40?img=2", message: "Blessings 🙏" },
-      { user: "Caroline", pic: "https://i.pravatar.cc/40?img=3", message: "Watching live now!" }
-    ];
-
-    function addComment({ user, pic, message }) {
+    function addComment(user, message) {
       const div = document.createElement("div");
       div.className = "comment";
       div.innerHTML = `
-        <img src="${pic}" class="profile-pic" />
         <span class="username">${user}</span>
         <span class="message">${message}</span>
         <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" class="fb-logo" />
       `;
       commentsContainer.appendChild(div);
 
-      // Auto-remove after fadeout
-      setTimeout(() => {
-        div.remove();
-      }, 12000);
+      setTimeout(() => div.remove(), 12000);
     }
 
-    // Demo loop: push fake comments every few seconds
-    let i = 0;
-    setInterval(() => {
-      addComment(sampleComments[i % sampleComments.length]);
-      i++;
-    }, 5000);
+    async function fetchComments() {
+      try {
+        const res = await fetch("/comments");
+        const data = await res.json();
+        if (data.data) {
+          data.data.slice(-1).forEach(c => {
+            addComment(c.from?.name || "Anonymous", c.message);
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching comments", err);
+      }
+    }
+
+    setInterval(fetchComments, 5000);
   </script>
 </body>
 </html>
