@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Overlay</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #comments {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      height: 100vh;
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .comment {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      animation: fadeout 12s forwards;
+      color: white;
+    }
+
+    .profile-pic {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .username {
+      font-weight: bold;
+      color: yellow;
+      margin-right: 6px;
+    }
+
+    .message {
+      flex: 1;
+    }
+
+    .fb-logo {
+      width: 20px;
+      height: 20px;
+      margin-left: 8px;
+    }
+
+    @keyframes fadeout {
+      0% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="comments"></div>
+
+  <script>
+    const commentsContainer = document.getElementById("comments");
+
+    // Mock demo messages (replace with API later)
+    const sampleComments = [
+      { user: "Alice", pic: "https://i.pravatar.cc/40?img=1", message: "This is amazing!" },
+      { user: "Brian", pic: "https://i.pravatar.cc/40?img=2", message: "Blessings 🙏" },
+      { user: "Caroline", pic: "https://i.pravatar.cc/40?img=3", message: "Watching live now!" }
+    ];
+
+    function addComment({ user, pic, message }) {
+      const div = document.createElement("div");
+      div.className = "comment";
+      div.innerHTML = `
+        <img src="${pic}" class="profile-pic" />
+        <span class="username">${user}</span>
+        <span class="message">${message}</span>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" class="fb-logo" />
+      `;
+      commentsContainer.appendChild(div);
+
+      // Auto-remove after fadeout
+      setTimeout(() => {
+        div.remove();
+      }, 12000);
+    }
+
+    // Demo loop: push fake comments every few seconds
+    let i = 0;
+    setInterval(() => {
+      addComment(sampleComments[i % sampleComments.length]);
+      i++;
+    }, 5000);
+  </script>
+</body>
+</html>
