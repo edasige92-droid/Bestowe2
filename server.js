@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Comments API route
+// NEW: Facebook comments route
 app.get("/comments", async (req, res) => {
   try {
     const videoId = process.env.FB_VIDEO_ID;
@@ -36,5 +36,5 @@ app.get("/comments", async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
