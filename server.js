@@ -1,28 +1,33 @@
+// server.js
 import express from "express";
-import fetch from "node-fetch";
 import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Replace with your values
-const VIDEO_ID = process.env.FB_VIDEO_ID;
-const ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN;
+// Needed because __dirname is not available in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.use(express.static("public"));
+// Serve static files from the "public" folder
+app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/comments", async (req, res) => {
-  try {
-    const url = `https://graph.facebook.com/v21.0/${VIDEO_ID}/comments?fields=from,message,created_time&access_token=${ACCESS_TOKEN}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    console.error(err);
-    res.json({ error: "Failed to fetch comments" });
-  }
+// Default route → overlay.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "overlay.html"));
 });
 
+// Example extra overlay routes (if needed for OBS scenes)
+app.get("/overlay1", (req, res) => {
+  res.sendFile(path.join(__dirname, "overlay1.html"));
+});
+
+app.get("/overlay2", (req, res) => {
+  res.sendFile(path.join(__dirname, "overlay2.html"));
+});
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
