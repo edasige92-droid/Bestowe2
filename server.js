@@ -1,40 +1,46 @@
-import express from "express";
-import fetch from "node-fetch";
-import path from "path";
-import { fileURLToPath } from "url";
+const express = require("express");
+const fetch = require("node-fetch");
+const http = require("http");
+const socketIo = require("socket.io");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
+const io = socketIo(server);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const PAGE_ACCESS_TOKEN = "YOUR_PAGE_ACCESS_TOKEN"; // must have pages_read_engagement + pages_read_user_content
+const VIDEO_ID = "657216063676510"; // replace with your video ID
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public")); // overlay.html in /public
 
-// Serve index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "overlay.html"));
-});
-
-// NEW: Facebook comments route
-app.get("/comments", async (req, res) => {
+// Function to fetch comments
+async function fetchComments() {
   try {
-    const videoId = process.env.FB_VIDEO_ID;
-    const token = process.env.FB_ACCESS_TOKEN;
+    const url = `https://graph.facebook.com/v21.0/${VIDEO_ID}/comments?fields=from,message,created_time&access_token=${PAGE_ACCESS_TOKEN}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-    const fbRes = await fetch(
-      `https://graph.facebook.com/v21.0/${videoId}/comments?fields=from,message,created_time&access_token=${token}`
-    );
+    if (data.error) {
+      console.error("Facebook API error:", data.error);
+      return;
+    }
 
-    const data = await fbRes.json();
-    res.json(data);
+    if (data.data && data.data.length > 0) {
+      data.data.forEach(comment => {
+        io.emit("newComment", comment);
+      });
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching comments:", err);
   }
+}
+
+// Poll every 10 seconds
+setInterval(fetchComments, 10000);
+
+io.on("connection", (socket) => {
+  console.log("Overlay connected");
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+server.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
 });
