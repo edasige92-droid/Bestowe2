@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat Overlay</title>
+  <title>Facebook Comments Overlay</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: transparent;
+      background: transparent; /* for OBS */
       font-family: Arial, sans-serif;
-      overflow: hidden;
+      color: white;
     }
 
     #comments {
@@ -17,8 +17,7 @@
       flex-direction: column;
       justify-content: flex-end;
       height: 100vh;
-      width: 100%;
-      padding: 10px;
+      padding: 20px;
       box-sizing: border-box;
     }
 
@@ -26,93 +25,77 @@
       display: flex;
       align-items: center;
       background: rgba(0, 0, 0, 0.6);
-      border-radius: 20px;
-      padding: 8px 12px;
-      margin-bottom: 10px;
-      animation: fadeout 12s forwards;
-      color: white;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 12px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .profile-pic {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
     }
 
     .username {
-      font-weight: bold;
       color: yellow;
-      margin-right: 6px;
+      font-weight: bold;
+      margin-right: 8px;
     }
 
     .fb-logo {
       width: 20px;
       height: 20px;
-      margin-left: 8px;
+      margin-left: auto;
     }
 
-    @keyframes fadeout {
-      0% { opacity: 1; }
-      80% { opacity: 1; }
-      100% { opacity: 0; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-  <div id="comments"></div>
+  <div id="comments">
+    <p>No comments yet...</p>
+  </div>
 
+  <!-- Socket.IO client -->
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const commentsContainer = document.getElementById("comments");
+    const socket = io(); // connects to same server
+    const commentsDiv = document.getElementById("comments");
 
-    function addComment(user, message) {
-      const div = document.createElement("div");
-      div.className = "comment";
-      div.innerHTML = `
-        <span class="username">${user}</span>
-        <span class="message">${message}</span>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" class="fb-logo" />
-      `;
-      commentsContainer.appendChild(div);
+    socket.on("comments", (comments) => {
+      commentsDiv.innerHTML = ""; // clear old
+      comments.forEach(c => {
+        const div = document.createElement("div");
+        div.classList.add("comment");
 
-      setTimeout(() => div.remove(), 12000);
-    }
+        const img = document.createElement("img");
+        img.classList.add("profile-pic");
+        img.src = `https://graph.facebook.com/${c.from.id}/picture?type=square`;
 
-    async function fetchComments() {
-      try {
-        const res = await fetch("/comments");
-        const data = await res.json();
-        if (data.data) {
-          data.data.slice(-1).forEach(c => {
-            addComment(c.from?.name || "Anonymous", c.message);
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching comments", err);
-      }
-    }
+        const name = document.createElement("span");
+        name.classList.add("username");
+        name.textContent = c.from.name;
 
-    setInterval(fetchComments, 5000);
+        const msg = document.createElement("span");
+        msg.textContent = `: ${c.message}`;
+
+        const logo = document.createElement("img");
+        logo.classList.add("fb-logo");
+        logo.src = "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg";
+
+        div.appendChild(img);
+        div.appendChild(name);
+        div.appendChild(msg);
+        div.appendChild(logo);
+
+        commentsDiv.appendChild(div);
+      });
+    });
   </script>
 </body>
 </html>
-<script>
-  async function loadComments() {
-    try {
-      const res = await fetch("/comments"); // calls server.js
-      const data = await res.json();
-
-      const container = document.getElementById("comments");
-      container.innerHTML = "";
-
-      if (data.data) {
-        data.data.forEach((c) => {
-          const div = document.createElement("div");
-          div.textContent = `${c.from.name}: ${c.message}`;
-          container.appendChild(div);
-        });
-      } else {
-        container.textContent = "No comments yet...";
-      }
-    } catch (err) {
-      console.error("Error fetching comments:", err);
-    }
-  }
-
-  setInterval(loadComments, 5000); // refresh every 5s
-  loadComments();
-</script>
-
