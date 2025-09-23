@@ -1,23 +1,27 @@
 const express = require("express");
-const fetch = require("node-fetch");
 const http = require("http");
 const socketIo = require("socket.io");
+const fetch = require("node-fetch");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const PAGE_ACCESS_TOKEN = "EAAJoQm5bKFIBPpZBLNhVXZCXkVc4913wt1ly0A8P5bdwOJZCWemsPvrgewZAZC5Xm5NWNz3jQWnjXWY7bH4O5hmrjfNMoyQvF5ZAKuki7tZAWnUYxqmo8054gfZCFL5fZCuIRKTRfmxZC8XUO06Tay6BXHyXifG7UZAm8JG5YhyEgm2lqncOH7HYY8hDQHpWpgtfdZBSN7vsbPTX8z6c1sk7RE1osby6tA0DSlMFm3p5qjZC53ZCl0ZCUK47MIcxZC1lFejo"; // must have pages_read_engagement + pages_read_user_content
-const VIDEO_ID = "657216063676510"; // replace with your video ID
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static("public")); // overlay.html in /public
+// === Replace with your values (better: move to env variables) ===
+const PAGE_ACCESS_TOKEN = "EAAJoQm5bKFIBPpZBLNhVXZCXkVc4913wt1ly0A8P5bdwOJZCWemsPvrgewZAZC5Xm5NWNz3jQWnjXWY7bH4O5hmrjfNMoyQvF5ZAKuki7tZAWnUYxqmo8054gfZCFL5fZCuIRKTRfmxZC8XUO06Tay6BXHyXifG7UZAm8JG5YhyEgm2lqncOH7HYY8hDQHpWpgtfdZBSN7vsbPTX8z6c1sk7RE1osby6tA0DSlMFm3p5qjZC53ZCl0ZCUK47MIcxZC1lFejo";
+const VIDEO_ID = "657216063676510";
 
-// Function to fetch comments
+// Serve overlay.html so OBS can load it
+app.use(express.static(__dirname + "/public"));
+
+// Poll comments from Facebook API
 async function fetchComments() {
   try {
     const url = `https://graph.facebook.com/v21.0/$657216063676510/comments?fields=from,message,created_time&access_token=$EAAJoQm5bKFIBPpZBLNhVXZCXkVc4913wt1ly0A8P5bdwOJZCWemsPvrgewZAZC5Xm5NWNz3jQWnjXWY7bH4O5hmrjfNMoyQvF5ZAKuki7tZAWnUYxqmo8054gfZCFL5fZCuIRKTRfmxZC8XUO06Tay6BXHyXifG7UZAm8JG5YhyEgm2lqncOH7HYY8hDQHpWpgtfdZBSN7vsbPTX8z6c1sk7RE1osby6tA0DSlMFm3p5qjZC53ZCl0ZCUK47MIcxZC1lFejo`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const response = await fetch(url);
+    const data = await response.json();
 
     if (data.error) {
       console.error("Facebook API error:", data.error);
@@ -25,22 +29,20 @@ async function fetchComments() {
     }
 
     if (data.data && data.data.length > 0) {
-      data.data.forEach(comment => {
-        io.emit("newComment", comment);
-      });
+      io.emit("comments", data.data);
+      console.log("Sent comments to overlay:", data.data.length);
+    } else {
+      console.log("No new comments...");
     }
   } catch (err) {
     console.error("Error fetching comments:", err);
   }
 }
 
-// Poll every 10 seconds
+// Fetch comments every 10s
 setInterval(fetchComments, 10000);
 
-io.on("connection", (socket) => {
-  console.log("Overlay connected");
-});
-
-server.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+// Start server
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
